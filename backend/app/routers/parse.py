@@ -1,16 +1,14 @@
+import logging
 from fastapi import APIRouter, HTTPException, status
 
 from app.models.requests import ParseRequest
 from app.models.responses import ParseResponse
 from app.services.ai_service import AIServiceError
-from app.services.mock_ai_service import MockAIService
+from app.services.factory import get_ai_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["Parse"])
-
-# Temporary dependency choice.
-# In Phase 6, a provider factory will return GeminiService, OpenAIService,
-# OllamaService, or MockAIService based on configuration.
-ai_service = MockAIService()
 
 
 @router.post(
@@ -20,10 +18,8 @@ ai_service = MockAIService()
 )
 async def parse_transcript(request: ParseRequest) -> ParseResponse:
     """
-    Convert a user-provided transcript into structured study notes.
-
-    The current implementation uses MockAIService.
-    A real LLM provider is connected in Phase 6.
+    Convert a user-provided transcript into structured study notes
+    using the configured AI provider.
     """
     transcript = request.transcript.strip()
 
@@ -43,10 +39,19 @@ async def parse_transcript(request: ParseRequest) -> ParseResponse:
         )
 
     try:
+        # Obtain active AI service instance from Factory
+        ai_service = get_ai_service()
         return await ai_service.parse_transcript(transcript)
 
     except AIServiceError as error:
+        logger.error(f"AI Service failure: {error}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="The AI parsing service is temporarily unavailable. Please try again.",
+            detail=str(error),
+        ) from error
+    except Exception as error:
+        logger.error(f"Unexpected backend failure: {error}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An internal server error occurred while processing the transcript.",
         ) from error

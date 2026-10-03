@@ -2,42 +2,27 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-# This looks for a .env file in the backend/ directory
 load_dotenv()
 
 
 class Settings:
-    """
-    Application settings loaded from environment variables.
-    
-    Why a class instead of just using os.getenv() everywhere?
-    1. Single source of truth — all settings in one place
-    2. Easy to add defaults
-    3. Easy to test (you can override settings in tests)
-    4. Clear documentation of what settings exist
-    """
-    
-    # AI Provider Settings
-    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini")
+    """Application settings loaded from environment variables."""
+
+    # Provider selection: "gemini", "ollama", or "mock"
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini").lower()
+
+    # Gemini Settings
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-    
-    # Server Settings
-    PORT: int = int(os.getenv("PORT", "8000"))
-    DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
-    
-    # Application Limits
-    MAX_TRANSCRIPT_LENGTH: int = 100_000  # characters
-    MIN_TRANSCRIPT_LENGTH: int = 50       # characters
-    
-    def get_api_key(self) -> str:
-        """Return the API key for the currently configured provider."""
-        if self.AI_PROVIDER == "gemini":
-            return self.GEMINI_API_KEY
-        elif self.AI_PROVIDER == "openai":
-            return self.OPENAI_API_KEY
-        return ""
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+
+    # Ollama Settings
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "qwen2.5-coder:7b")
+
+    # Server Limits
+    MAX_TRANSCRIPT_LENGTH: int = 100_000
+    MIN_TRANSCRIPT_LENGTH: int = 50
+    REQUEST_TIMEOUT_SECONDS: float = 60.0
 
 
-# Create a single settings instance that the whole app can import
 settings = Settings()
