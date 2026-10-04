@@ -1,4 +1,3 @@
-import json
 import logging
 import httpx
 
@@ -6,14 +5,15 @@ from app.config import settings
 from app.models.responses import ParseResponse
 from app.services.ai_service import AIService, AIServiceError
 from app.services.prompt_builder import SYSTEM_INSTRUCTIONS, build_parse_prompt
+from app.utils.validators import parse_and_validate_llm_response
 
 logger = logging.getLogger(__name__)
 
 
 class OllamaService(AIService):
     """
-    Service for parsing transcripts using a local Ollama server.
-    Completely free and runs locally on your machine.
+    Service for parsing transcripts using a local Ollama server
+    with integrated output validation and sanitization pipeline.
     """
 
     def __init__(self):
@@ -28,11 +28,9 @@ class OllamaService(AIService):
             "model": self.model,
             "prompt": prompt,
             "system": SYSTEM_INSTRUCTIONS,
-            "format": "json",  # Enforce JSON mode in Ollama
+            "format": "json",
             "stream": False,
-            "options": {
-                "temperature": 0.1
-            }
+            "options": {"temperature": 0.1},
         }
 
         try:
@@ -41,20 +39,18 @@ class OllamaService(AIService):
                 response.raise_for_status()
 
                 data = response.json()
-                raw_response_text = data.get("response", "")
+                raw_text = data.get("response", "")
 
-                if not raw_response_text:
-                    raise AIServiceError("Ollama returned an empty response.")
-
-                raw_json = json.loads(raw_response_text)
-                return ParseResponse(**raw_json)
+                # Pass local LLM output through our validation pipeline
+                return parse_and_validate_llm_response(raw_text)
 
         except httpx.HTTPError as e:
             logger.error(f"Ollama connection error: {e}")
             raise AIServiceError(
-                f"Could not connect to local Ollama server at {self.base_url}. "
-                "Ensure Ollama is running (`ollama serve`)."
+                f"Could not connect to local Ollama server at {self.base_url}."
             ) from e
-        except json.JSONDecodeError as e:
-            logger.error(f"Ollama response was not valid JSON: {e}")
-            raise AIServiceError("Failed to parse Ollama output as JSON.") from e
+        except AIServiceError:
+            raise
+        except Exception as e:
+            logger.error(f"Ollama execution error: {e}")
+            raise AIServiceError(f"Local AI error: {str(e)}") from e
