@@ -1,4 +1,5 @@
 import { BookOpen, Code2, MessageCircleQuestion, PenTool, Lightbulb } from 'lucide-react';
+import MarkdownRenderer from '../common/MarkdownRenderer';
 
 /**
  * The Overview tab — shows summary stats and a high-level summary.
@@ -45,7 +46,8 @@ export default function OverviewSection({ result }) {
           <h3 className="text-lg font-semibold text-blue-900 mb-2">
             📝 Summary
           </h3>
-          <p className="text-blue-800 leading-relaxed">{result.summary}</p>
+          <MarkdownRenderer content={result.summary} />
+          
         </div>
       )}
 

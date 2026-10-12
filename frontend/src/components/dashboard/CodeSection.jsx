@@ -1,73 +1,78 @@
+import { Code2, Search } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useState } from 'react';
-import { Code2, Copy, Check } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
+import MarkdownRenderer from '../common/MarkdownRenderer';
 
-/**
- * Displays code snippets with syntax highlighting placeholder
- * and copy-to-clipboard functionality.
- * 
- * Note: Full syntax highlighting will be added in Phase 10.
- * For now, we use a styled <pre> block.
- */
-export default function CodeSection({ snippets = [] }) {
+export default function CodeSection({ snippets = [], searchQuery = "" }) {
+  const filteredSnippets = snippets.filter((s) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      (s.title?.toLowerCase() ?? "").includes(query) ||
+      (s.language?.toLowerCase() ?? "").includes(query) ||
+      (s.explanation?.toLowerCase() ?? "").includes(query) ||
+      (s.code?.toLowerCase() ?? "").includes(query)
+    );
+  });
+
   if (snippets.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
-        <Code2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-        <p className="text-sm">No code snippets were extracted from this transcript.</p>
+      <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+        <Code2 className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+        <p className="text-gray-500 text-sm">No code snippets were extracted from this transcript.</p>
+      </div>
+    );
+  }
+
+  if (filteredSnippets.length === 0) {
+    return (
+      <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+        <Search className="w-10 h-10 mx-auto text-gray-300 mb-2" />
+        <p className="text-gray-600 font-medium">No code snippets match "{searchQuery}"</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {snippets.map((snippet, index) => (
-        <CodeBlock key={index} snippet={snippet} />
+      {filteredSnippets.map((snippet, index) => (
+        <CodeCard key={index} snippet={snippet} />
       ))}
     </div>
   );
 }
 
-/**
- * A single code block with header, copy button, and code display.
- */
-function CodeBlock({ snippet }) {
+function CodeCard({ snippet }) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
     try {
-      // The Clipboard API lets us copy text to the user's clipboard
       await navigator.clipboard.writeText(snippet.code);
       setCopied(true);
-      // Reset the "Copied!" indicator after 2 seconds
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+    } catch {}
   }
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden">
-      {/* Header bar */}
-      <div className="flex items-center justify-between bg-gray-800 px-4 py-2">
-        <div className="flex items-center gap-2">
-          {/* Language badge */}
-          <span className="text-xs font-mono font-semibold text-gray-300 uppercase">
-            {snippet.language || 'code'}
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs">
+      {/* Code Header Bar */}
+      <div className="flex items-center justify-between px-5 py-3 bg-[#252526] text-white">
+        <div className="flex items-center gap-3">
+          <span className="font-semibold text-sm text-gray-200">{snippet.title}</span>
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-blue-600/30 text-blue-400 border border-blue-500/30 rounded">
+            {snippet.language || "code"}
           </span>
-          <span className="text-gray-600">•</span>
-          <span className="text-sm text-gray-300">{snippet.title}</span>
         </div>
-        
-        {/* Copy button */}
+
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-700"
-          aria-label="Copy code to clipboard"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
         >
           {copied ? (
             <>
               <Check className="w-3.5 h-3.5 text-green-400" />
-              <span className="text-green-400">Copied!</span>
+              <span className="text-green-400 font-medium">Copied!</span>
             </>
           ) : (
             <>
@@ -78,20 +83,28 @@ function CodeBlock({ snippet }) {
         </button>
       </div>
 
-      {/* Code content */}
-      <pre className="bg-gray-900 p-4 overflow-x-auto">
-        <code className="text-sm font-mono text-gray-100 leading-relaxed">
-          {snippet.code}
-        </code>
-      </pre>
+      {/* Syntax Highlighted Code Window */}
+      <SyntaxHighlighter
+        language={snippet.language?.toLowerCase() || 'text'}
+        style={vscDarkPlus}
+        customStyle={{
+          margin: 0,
+          padding: '1.25rem',
+          fontSize: '0.85rem',
+          lineHeight: '1.6',
+          background: '#1e1e1e',
+        }}
+      >
+        {snippet.code}
+      </SyntaxHighlighter>
 
-      {/* Explanation */}
+      {/* Code Explanation rendered via Markdown */}
       {snippet.explanation && (
-        <div className="bg-gray-50 border-t border-gray-200 px-4 py-3">
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold text-gray-700">Explanation: </span>
-            {snippet.explanation}
-          </p>
+        <div className="px-5 py-4 bg-gray-50 border-t border-gray-200 text-xs">
+          <span className="font-semibold text-gray-700 uppercase tracking-wider block mb-1">
+            Explanation
+          </span>
+          <MarkdownRenderer content={snippet.explanation} />
         </div>
       )}
     </div>

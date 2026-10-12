@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MessageCircleQuestion, ChevronDown, ChevronUp } from 'lucide-react';
+import MarkdownRenderer from '../common/MarkdownRenderer';
 
 /**
  * Displays interview questions with reveal/hide answers.
@@ -71,9 +72,8 @@ function InterviewCard({ question, number }) {
             <h4 className="text-sm font-semibold text-green-800 mb-1">
               Answer
             </h4>
-            <p className="text-green-900 text-sm leading-relaxed">
-              {question.answer}
-            </p>
+            <MarkdownRenderer content={question.answer} />
+            
             {question.explanation && (
               <div className="mt-3 pt-3 border-t border-green-200">
                 <h4 className="text-sm font-semibold text-green-800 mb-1">
