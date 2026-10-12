@@ -31,3 +31,52 @@ html {
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+
+/* ─── PRINT / PDF EXPORT STYLES ─── */
+@media print {
+  /* Set standard A4/Letter page margins */
+  @page {
+    margin: 1.5cm;
+    size: auto;
+  }
+
+  /* Force background colors and syntax colors to show in print */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Hide interactive web UI controls in the PDF */
+  nav,
+  header,
+  .no-print,
+  button,
+  input {
+    display: none !important;
+  }
+
+  /* Prevent components from breaking across page cuts */
+  .bg-white,
+  .border,
+  pre,
+  blockquote,
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Make links display cleanly without blue underlines */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
+  /* Ensure text spans full printable width */
+  main, .max-w-6xl {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
